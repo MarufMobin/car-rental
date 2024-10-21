@@ -19,23 +19,20 @@ class RentalController extends Controller
         return view('backend.pages.rental.manage', compact('datas'));
     }
 
-    public function create()
-    {
-        
-    }
+    public function create() {}
 
     public function store(Request $request)
     {
         $user = Auth::user()->id;
         $email = Auth::user()->email;
         $car_id = $request->input('car_id');
-        
+
         // Fetch car details
         $car = Car::find($car_id);
         if (!$car) {
             return redirect()->back()->withErrors(['Car not found']);
         }
-        
+
         $car_name = $car->name;
 
         $start = Carbon::parse($request->input('start_date'));
@@ -44,24 +41,24 @@ class RentalController extends Controller
         // Calculate the difference in days
         $daysDifference = $start->diffInDays($end);
         $total_cost = $request->input('total_cost'); // Use a clearer variable name
-        $paid = $total_cost*$daysDifference;
+        $paid = $total_cost * $daysDifference;
 
         // Create the rental
         Rental::create([
-            'user_id' => $user,      
-            'car_id' => $car_id,         
-            'start_date' => $start,      
+            'user_id' => $user,
+            'car_id' => $car_id,
+            'start_date' => $start,
             'end_date' => $end,
-            'total_cost' => $paid         
+            'total_cost' => $paid
         ]);
 
         // Update car availability
         $car->update(['availability' => '0']);
-        
+
         // Send emails
         Mail::to($email)->send(new ConformationMail($car_name, $total_cost, $start, $end));
-        
-        return redirect()->route('home');
+
+        return redirect()->route('dashboard');
     }
 
     public function show(string $id)
